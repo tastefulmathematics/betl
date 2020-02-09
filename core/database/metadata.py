@@ -1,3 +1,4 @@
+from sqlalchemy.dialects.postgresql import JSONB
 import sqlalchemy as sa
 
 b_id = {
@@ -34,6 +35,16 @@ b_is_valid = {
   "name": "b_is_valid",
   "type_": sa.Boolean,
   "index": True,
+}
+
+b_options = {
+  "name": "b_options",
+  "type_": JSONB,
+}
+
+b_labels = {
+  "name": "b_labels",
+  "type_": JSONB,
 }
 
 b_created_by = {

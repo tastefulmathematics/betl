@@ -1,4 +1,4 @@
-from core import reference_tables, database_connection
+from core.database import reference_tables, database_binding
 
 
 class ReferenceInterface:
@@ -12,13 +12,13 @@ class ReferenceInterface:
             self.cache_subscription_map()
 
     def cache_data_source_map(self):
-        with database_connection.DatabaseConnection() as conn:
+        with database_binding.DatabaseBinding() as conn:
             table = reference_tables.ReferenceTables().data_source
             statement = table.select().order_by(table.c.b_created_by)
             self._data_source_map = {row.key: dict(row) for row in conn.execute(statement)}
 
     def cache_subscription_map(self):
-        with database_connection.DatabaseConnection() as conn:
+        with database_binding.DatabaseBinding() as conn:
             table = reference_tables.ReferenceTables().service
             statement = table.select().order_by(table.c.b_created_by)
             service_map = {row.key: dict(row) for row in conn.execute(statement)}

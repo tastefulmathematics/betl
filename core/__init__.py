@@ -1,6 +1,5 @@
-import sqlalchemy as sa
+from sqlalchemy.engine import url
 import logging
-import inspect
 import json
 import os
 
@@ -16,13 +15,19 @@ ENVIRONMENT_TYPE = os.environ.get("ENVIRONMENT_TYPE")
 DATABASE_KEYS = []
 
 
+def _key(key, context):
+    global_key = f"{ENVIRONMENT_TYPE}:{context}:{key}"
+    local_key = f"{ENVIRONMENT_TYPE}/{context}/{key}".replace("/", "__").replace("-", "_")
+    return global_key, local_key
+
+
 def get_logger(name):
-    return logging.get_logger(name)
+    return logging.getLogger(name)
 
 
 def get(key, context=DEFAULT_CONTEXT):
-    _key = f"{ENVIRONMENT_TYPE}:{context}:{key}"
-    return _GLOBAL_CACHE.get(key) or os.environ.get(key) or None
+    global_key, local_key = _key(key, context)
+    return _GLOBAL_CACHE.get(global_key) or os.environ.get(local_key) or None
 
 
 def get_int(key, context=DEFAULT_CONTEXT, default=0):
@@ -36,9 +41,10 @@ def get_int(key, context=DEFAULT_CONTEXT, default=0):
         return 0
 
 
-def put(key, value):
+def put(key, value, context=DEFAULT_CONTEXT):
     global _GLOBAL_CACHE
-    _GLOBAL_CACHE[key] = value
+    global_key, _ = _key(key, context)
+    _GLOBAL_CACHE[global_key] = value
 
 
 def get_database_url(database_key, **credentials):
@@ -52,7 +58,7 @@ def get_database_url(database_key, **credentials):
     database_server_key = get("database_server_key", database_key)
     database_server_url = get("database_server_url", database_server_key)
 
-    _url = sa.make_url(database_server_url)
+    _url = url.make_url(database_server_url)
     _url.database = get("database_name", database_key) or database_key
 
     _url.user = credentials.get("user") or _url.user
@@ -71,4 +77,4 @@ def function_annotation(**annotation):
     return decorator
 
 
-logger = get_logger(__name___)
+logger = get_logger(__name__)

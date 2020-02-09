@@ -1,5 +1,5 @@
 import sqlalchemy as sa
-from core import facade
+import core
 
 
 class DatabaseBinding:
@@ -9,17 +9,23 @@ class DatabaseBinding:
     """
 
     def __init__(self, database_key):
-        self.connection_string, self.masked_String = facade.get_database_url(database_key)
+        self.connection_string, self.masked_String = core.get_database_url(database_key)
         self.engine = sa.create_engine(self.connection_string)
 
-    def __enter__():
+    def __enter__(self):
         pass
 
-    def __exit__():
+    def __exit__(self, _, _, _):
+        self._finalize()
+
+    def __del__(self):
+        self._finalize()
+
+    def _finalize(self):
         pass
 
-    def __del__():
+    def reflect_table(self, table_name, schema_name):
         pass
 
-    def reflect_table(table_name, schema_name):
+    def transaction(self):
         pass
