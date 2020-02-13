@@ -2,7 +2,7 @@ import random
 import uuid
 
 
-class SetUpTools:
+class TestTools:
 
     def __init__(self, name, user=""):
         self.name = name

@@ -1,3 +1,4 @@
+import core
 from core.database import reference_tables, database_binding
 
 
@@ -11,25 +12,35 @@ class ReferenceInterface:
         if not self._subscription_map:
             self.cache_subscription_map()
 
+    def compactify_table(self, table):
+        with database_binding.DatabaseBinding("default_reference_database") as conn:
+            statement = table.select().order_by(table.c.b_created_ts)
+            default_table = {row.key: dict(row) for row in conn.execute(statement)}
+
+        if core.is_production():
+            return default_table
+
+        with database_binding.DatabaseBinding("reference_database") as conn:
+            statement = table.select().order_by(table.c.b_created_ts)
+            override_table = {row.key: dict(row) for row in conn.execute(statement)}
+            default_table.update(override_table)
+            return default_table
+
     def cache_data_source_map(self):
         with database_binding.DatabaseBinding() as conn:
             table = reference_tables.ReferenceTables().data_source
-            statement = table.select().order_by(table.c.b_created_by)
-            self._data_source_map = {row.key: dict(row) for row in conn.execute(statement)}
+            self._data_source_map = self.compactify_table(table)
 
     def cache_subscription_map(self):
         with database_binding.DatabaseBinding() as conn:
             table = reference_tables.ReferenceTables().service
-            statement = table.select().order_by(table.c.b_created_by)
-            service_map = {row.key: dict(row) for row in conn.execute(statement)}
+            service_map = self.compactify_table(table)
 
             table = reference_tables.ReferenceTables().topic
-            statement = table.select().order_by(table.c.b_created_by)
-            topic_map = {row.key: dict(row) for row in conn.execute(statement)}
+            topic_map = self.compactify_table(table)
 
             table = reference_tables.ReferenceTables().subscription
-            statement = table.select().order_by(table.c.b_created_by)
-            subscription_map = {row.key: dict(row) for row in conn.execute(statement)}
+            subscription_map = self.compactify_table(table)
 
             for subscription_record in subscription_map.values():
                 topic_key = subscription_record["topic_key"]
@@ -48,4 +59,3 @@ class ReferenceInterface:
                     "subscription": subscription_record,
                     "strategy": subscription_record["strategy"],
                 }
-
